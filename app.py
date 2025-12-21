@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import requests
 import json
 import time
@@ -145,43 +144,28 @@ if fetch_btn:
                     """
                 )
 
-                # ✅ WORKING avatar link (copy + open)
                 if avatar_url:
-                    components.html(
+                    st.markdown(
                         f"""
-                        <div style="margin-top:8px;font-family:sans-serif;">
-                            <span id="avatarLink"
-                                style="cursor:pointer;color:#4ea1ff;text-decoration:underline;font-size:14px;">
-                                🔗 Avatar Image Link
+                        <div style="margin-top:8px;">
+                            <span
+                                onclick="navigator.clipboard.writeText('{avatar_url}')"
+                                title="Click to copy"
+                                style="
+                                    cursor:pointer;
+                                    color:#4ea1ff;
+                                    text-decoration:underline;
+                                    font-size:14px;
+                                "
+                            >
+                                🔗 Copy Avatar Image URL
                             </span>
-                            <div id="hint" style="font-size:12px;color:gray;">
-                                Single click → copy • Double click → open
+                            <div style="font-size:12px;color:gray;">
+                                Click once to copy
                             </div>
-
-                            <script>
-                                const link = "{avatar_url}";
-                                const el = document.getElementById("avatarLink");
-                                const hint = document.getElementById("hint");
-                                let timer = null;
-
-                                el.addEventListener("click", () => {{
-                                    timer = setTimeout(() => {{
-                                        navigator.clipboard.writeText(link);
-                                        hint.innerText = "✅ Copied to clipboard";
-                                        setTimeout(() => {{
-                                            hint.innerText = "Single click → copy • Double click → open";
-                                        }}, 1200);
-                                    }}, 250);
-                                });
-
-                                el.addEventListener("dblclick", () => {{
-                                    clearTimeout(timer);
-                                    window.open(link, "_blank");
-                                });
-                            </script>
                         </div>
                         """,
-                        height=70
+                        unsafe_allow_html=True
                     )
 
             with col2:
@@ -193,6 +177,27 @@ if fetch_btn:
                 st.markdown(f"**Bio:** {info.get('sign')}")
 
             st.divider()
+
+            # ===============================
+            # BASIC INFORMATION
+            # ===============================
+            st.subheader("📌 Basic Information")
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.markdown(f"**🌍 Country:** {info.get('country')}")
+                st.markdown(f"**🏳 Region:** {info.get('region')}")
+                st.markdown(f"**🏠 Hometown:** {info.get('hometown')}")
+
+            with c2:
+                st.markdown(f"**📱 Device:** {info.get('device')}")
+                st.markdown(f"**🧠 OS:** {info.get('os_type')}")
+                st.markdown(f"**📦 App Name:** {info.get('app_name')}")
+
+            with c3:
+                st.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
+                st.markdown(f"**🗣 Language:** {info.get('lang')}")
+                st.markdown(f"**💼 Job:** {info.get('job')}")
 
             # ===============================
             # RAW JSON
