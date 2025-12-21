@@ -45,7 +45,7 @@ if fetch_btn:
     else:
         try:
             with st.spinner("🔎 Resolving VID → UID..."):
-                client = httpx.Client(http2=True, timeout=20)
+                cclient = httpx.Client(timeout=20)
 
                 # ===============================
                 # 1️⃣ VID → UID
