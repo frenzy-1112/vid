@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # ===============================
 # STREAMLIT CONFIG
@@ -13,26 +13,46 @@ st.set_page_config(
 )
 
 st.title("🔍 VID → User Details Fetcher")
-st.caption("Advanced profile view from VID")
+st.caption("Advanced user profile view")
 
 # ===============================
 # HARDCODED COOKIE (PRIVATE REPO ONLY)
 # ===============================
-UAAS_COOKIE = "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2CnNM9ovMxw68QzWOyQX236BxhgJK9ffj%2BtHd8YDwrmMCxeHcUP3khT7ZIlfNaJH%2FP555SKvk%2BwkLQR%2BxiNEMh6CqdrdI%2F0YkLLRJALxoBMthSdWByXPACYv1L2RehQk8Gc98I9RIG5h11g87OtUXE4Jymwhxz4Y6RdQEcUpSSuOJq3agxtkoAZ2BZrFdG4SwP6AnYaVtghDNjm8G8g9sGSozagbhZxA%2Fde9IDqORxokDpFmCjcQ%2Fcbzg%2F%2Fb4vHfrrUUAyi83RA7l1%2Brq7LBl9Z2yNrbCpDo2adm0Qk57VVRroC5oEv%2BX8RyddWcupr6QTf0bm9KRuE62pKCkfWC37v9ahvIFOrDcO7EfKH33za5cio4SGTBT6LXU4fpMlvbr48NGLvLPCTDWejlROuPZmTQV6vQXnZe6pAGSJePwpMo0v%2FEzV6CN%2Bm4crHWjw091VHKK5f%2BXaxEyfakeEleUZyaYza8BlqCABfbOrWmDV7DeWAi2NTpSBR%2F%2BEmv9AwzLE"
+UAAS_COOKIE = (
+    "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2C"
+    "nNM9ovMxw68QzWOyQX236BxhgJK9ffj%2BtHd8YDwrmMCxeHcUP3khT7ZIlfNaJH%2FP555"
+    "SKvk%2BwkLQR%2BxiNEMh6CqdrdI%2F0YkLLRJALxoBMthSdWByXPACYv1L2RehQk8Gc98I9"
+    "RIG5h11g87OtUXE4Jymwhxz4Y6RdQEcUpSSuOJq3agxtkoAZ2BZrFdG4SwP6AnYaVtgh"
+    "DNjm8G8g9sGSozagbhZxA%2Fde9IDqORxokDpFmCjcQ%2Fcbzg%2F%2Fb4vHfrrUUAyi83RA7"
+    "l1%2Brq7LBl9Z2yNrbCpDo2adm0Qk57VVRroC5oEv%2BX8RyddWcupr6QTf0bm9KRuE62pK"
+    "CkfWC37v9ahvIFOrDcO7EfKH33za5cio4SGTBT6LXU4fpMlvbr48NGLvLPCTDWejlROuP"
+    "ZmTQV6vQXnZe6pAGSJePwpMo0v%2FEzV6CN%2Bm4crHWjw091VHKK5f%2BXaxEyfakeEleUZ"
+    "yaYza8BlqCABfbOrWmDV7DeWAi2NTpSBR%2F%2BEmv9AwzLE"
+)
 
 # ===============================
-# HELPERS
+# TIME HELPERS (IST)
 # ===============================
+IST = timezone(timedelta(hours=5, minutes=30))
+
 def ts():
     return str(int(time.time() * 1000))
 
-def ts_to_date(ts_val):
-    if not ts_val:
+def ts_to_ist(ts_val):
+    if not ts_val or ts_val == 0:
         return "-"
-    return datetime.fromtimestamp(int(ts_val)).strftime("%Y-%m-%d %H:%M:%S")
+    dt = datetime.fromtimestamp(int(ts_val), tz=IST)
+    return dt.strftime("%Y-%m-%d %H:%M:%S IST")
 
-def gender(val):
-    return {0: "Unknown", 1: "Male", 2: "Female"}.get(val, "Unknown")
+def days_ago(ts_val):
+    if not ts_val or ts_val == 0:
+        return "-"
+    now = datetime.now(IST)
+    dt = datetime.fromtimestamp(int(ts_val), tz=IST)
+    return f"{(now - dt).days} days ago"
+
+def gender(v):
+    return {0: "Unknown", 1: "Male", 2: "Female"}.get(v, "Unknown")
 
 # ===============================
 # INPUT
@@ -45,7 +65,7 @@ fetch_btn = st.button("🚀 Fetch User Info")
 # ===============================
 if fetch_btn:
     if not vid.isdigit():
-        st.error("VID must be numeric")
+        st.error("❌ VID must be numeric")
     else:
         try:
             # ===============================
@@ -75,7 +95,7 @@ if fetch_btn:
                 uid = r1.json()["user_info"]["uid"]
 
             # ===============================
-            # 2️⃣ UID → FULL INFO
+            # 2️⃣ UID → FULL PROFILE
             # ===============================
             with st.spinner("Fetching full user profile..."):
                 r2 = requests.post(
@@ -125,48 +145,55 @@ if fetch_btn:
             st.divider()
 
             # ===============================
-            # BASIC DETAILS
+            # BASIC INFORMATION
             # ===============================
             st.subheader("📌 Basic Information")
             c1, c2, c3 = st.columns(3)
 
-            c1.write("🌍 Country:", info.get("country"))
-            c1.write("🏳 Region:", info.get("region"))
-            c1.write("🏠 Hometown:", info.get("hometown"))
+            with c1:
+                st.markdown(f"**🌍 Country:** {info.get('country')}")
+                st.markdown(f"**🏳 Region:** {info.get('region')}")
+                st.markdown(f"**🏠 Hometown:** {info.get('hometown')}")
 
-            c2.write("📱 Device:", info.get("device"))
-            c2.write("🧠 OS:", info.get("os_type"))
-            c2.write("📦 App:", info.get("app_name"))
+            with c2:
+                st.markdown(f"**📱 Device:** {info.get('device')}")
+                st.markdown(f"**🧠 OS:** {info.get('os_type')}")
+                st.markdown(f"**📦 App Name:** {info.get('app_name')}")
 
-            c3.write("🔢 App Version:", info.get("app_ver"))
-            c3.write("🗣 Language:", info.get("lang"))
-            c3.write("💼 Job:", info.get("job"))
+            with c3:
+                st.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
+                st.markdown(f"**🗣 Language:** {info.get('lang')}")
+                st.markdown(f"**💼 Job:** {info.get('job')}")
 
             # ===============================
-            # ACTIVITY
+            # REGISTRATION & ACTIVITY (IST)
             # ===============================
-            st.subheader("⏱ Activity")
-            a1, a2, a3 = st.columns(3)
+            st.subheader("🕒 Registration & Activity (IST)")
+            r1, r2, r3 = st.columns(3)
 
-            a1.write("🟢 First Login:", ts_to_date(info.get("first_login_time")))
-            a1.write("🟢 Register Time:", ts_to_date(info.get("register_time")))
+            with r1:
+                st.markdown("**🟢 Register Time**")
+                st.write(ts_to_ist(info.get("register_time")))
+                st.caption(days_ago(info.get("register_time")))
 
-            a2.write("🔵 Last Login:", ts_to_date(info.get("last_login_time")))
-            a2.write("🔵 Last Logout:", ts_to_date(info.get("last_logout_time")))
+            with r2:
+                st.markdown("**🟢 First Login**")
+                st.write(ts_to_ist(info.get("first_login_time")))
+                st.caption(days_ago(info.get("first_login_time")))
 
-            a3.write("📡 On Micro:", info.get("on_micro"))
-            a3.write("⚠ Status:", info.get("status"))
+            with r3:
+                st.markdown("**🔵 Last Login**")
+                st.write(ts_to_ist(info.get("last_login_time")))
+                st.caption(days_ago(info.get("last_login_time")))
 
             # ===============================
             # VIP / FLAGS
             # ===============================
             st.subheader("⭐ VIP / Flags")
             hago_ext = info.get("hago_ext", {})
-
-            st.write("SVIP Level:", hago_ext.get("svip_level"))
-            st.write("Anonymous Homepage:", hago_ext.get("anonymous_accessing_homepage"))
-            st.write("Forbid Follow:", hago_ext.get("forbid_follow"))
-            st.write("Forbid Bother:", hago_ext.get("forbid_bother"))
+            st.markdown(f"**SVIP Level:** {hago_ext.get('svip_level')}")
+            st.markdown(f"**Forbid Follow:** {hago_ext.get('forbid_follow')}")
+            st.markdown(f"**Forbid Bother:** {hago_ext.get('forbid_bother')}")
 
             # ===============================
             # LABELS
@@ -175,16 +202,16 @@ if fetch_btn:
             st.write(info.get("label_ids", []))
 
             # ===============================
-            # RAW JSON (OPTIONAL)
+            # RAW JSON
             # ===============================
             with st.expander("🧾 Raw JSON Response"):
                 st.json(data)
 
         except Exception as e:
-            st.error(f"Error occurred: {e}")
+            st.error(f"🔥 Error occurred: {e}")
 
 # ===============================
 # FOOTER
 # ===============================
 st.markdown("---")
-st.caption("⚠️ Advanced profile view | Hardcoded cookie version")
+st.caption("⚠️ Hardcoded cookie version — keep repository PRIVATE")
