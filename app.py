@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="VID → User Details Fetcher",
+    page_title="VID / UID → User Details Fetcher",
     layout="wide",
 )
 
@@ -16,7 +16,7 @@ st.title("𝖬𝖺𝗅𝗈𝗇𝖾'𝗌 𝖲𝗎𝗉𝗋𝖾𝗆𝖺𝖼𝗒 �
 st.caption("Advanced user profile view")
 
 # ===============================
-# HARDCODED COOKIE (PRIVATE REPO ONLY)
+# HARDCODED COOKIE (PRIVATE USE)
 # ===============================
 UAAS_COOKIE = (
     "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2C"
@@ -39,13 +39,13 @@ def ts():
     return str(int(time.time() * 1000))
 
 def ts_to_ist(ts_val):
-    if not ts_val or ts_val == 0:
+    if not ts_val:
         return "-"
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
-    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")  # 12H FORMAT
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")
 
 def days_ago(ts_val):
-    if not ts_val or ts_val == 0:
+    if not ts_val:
         return "-"
     now = datetime.now(IST)
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
@@ -57,45 +57,56 @@ def gender(v):
 # ===============================
 # INPUT
 # ===============================
-vid = st.text_input("Enter VID", placeholder="177307453")
+user_input = st.text_input(
+    "Enter VID or UID",
+    placeholder="177307453 (VID)  |  4466939783 (UID)"
+)
 fetch_btn = st.button("🚀 Fetch User Info")
 
 # ===============================
 # MAIN LOGIC
 # ===============================
 if fetch_btn:
-    if not vid.isdigit():
-        st.error("❌ VID must be numeric")
+    if not user_input.isdigit():
+        st.error("❌ Input must be numeric")
     else:
         try:
-            # ===============================
-            # 1️⃣ VID → UID
-            # ===============================
-            with st.spinner("Resolving VID → UID..."):
-                r1 = requests.post(
-                    "https://i-875.olaparty.com/ymicro/api",
-                    headers={
-                        "X-Ymicro-Api-Method-Name": "InformAgainst.CheckUnsealFriend",
-                        "X-Ymicro-Api-Service-Name": "net.ihago.inform.srv.mgr",
-                        "Hago-Seq-Id": ts(),
-                        "X-Ostype": "android",
-                        "X-Os-Ver": "12",
-                        "X-App-Ver": "50800",
-                        "Content-Type": "application/json",
-                    },
-                    cookies={"uaasCookie": UAAS_COOKIE},
-                    json={
-                        "sequence": int(ts()),
-                        "vid": int(vid),
-                        "t": 1
-                    },
-                    timeout=20
-                )
-
-                uid = r1.json()["user_info"]["uid"]
+            uid = None
 
             # ===============================
-            # 2️⃣ UID → FULL PROFILE
+            # DETECT UID OR VID
+            # ===============================
+            if user_input.startswith("4"):
+                uid = int(user_input)
+                st.success(f"✅ Using direct UID: {uid}")
+
+            else:
+                with st.spinner("Resolving VID → UID..."):
+                    r1 = requests.post(
+                        "https://i-875.olaparty.com/ymicro/api",
+                        headers={
+                            "X-Ymicro-Api-Method-Name": "InformAgainst.CheckUnsealFriend",
+                            "X-Ymicro-Api-Service-Name": "net.ihago.inform.srv.mgr",
+                            "Hago-Seq-Id": ts(),
+                            "X-Ostype": "android",
+                            "X-Os-Ver": "12",
+                            "X-App-Ver": "50800",
+                            "Content-Type": "application/json",
+                        },
+                        cookies={"uaasCookie": UAAS_COOKIE},
+                        json={
+                            "sequence": int(ts()),
+                            "vid": int(user_input),
+                            "t": 1
+                        },
+                        timeout=20
+                    )
+
+                    uid = r1.json()["user_info"]["uid"]
+                    st.success(f"✅ VID resolved → UID: {uid}")
+
+            # ===============================
+            # UID → FULL PROFILE
             # ===============================
             with st.spinner("Fetching full user profile..."):
                 r2 = requests.post(
@@ -134,16 +145,12 @@ if fetch_btn:
             with col1:
                 avatar_url = info.get("avatar")
                 st.image(avatar_url, width=180)
-
                 reg_ts = info.get("register_time")
                 st.markdown(
-                    f"""
-                    🕒 **Registered:**  
-                    {ts_to_ist(reg_ts)}  
-                    ⏳ *{days_ago(reg_ts)}*
-                    """
+                    f"🕒 **Registered:**  \n"
+                    f"{ts_to_ist(reg_ts)}  \n"
+                    f"⏳ *{days_ago(reg_ts)}*"
                 )
-
                 if avatar_url:
                     st.markdown(f"🔗 [Open Avatar Image]({avatar_url})")
 
@@ -158,7 +165,7 @@ if fetch_btn:
             st.divider()
 
             # ===============================
-            # BASIC INFORMATION
+            # BASIC INFO
             # ===============================
             st.subheader("📌 Basic Information")
             c1, c2, c3 = st.columns(3)
@@ -179,7 +186,7 @@ if fetch_btn:
                 st.markdown(f"**💼 Job:** {info.get('job')}")
 
             # ===============================
-            # REGISTRATION & ACTIVITY
+            # ACTIVITY
             # ===============================
             st.subheader("🕒 Registration & Activity (IST)")
             r1, r2, r3 = st.columns(3)
