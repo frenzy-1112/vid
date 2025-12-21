@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="VID → User Details Fetcher",
+    page_title="VID / UID → User Details Fetcher",
     layout="wide",
 )
 
@@ -16,7 +16,7 @@ st.title("𝖬𝖺𝗅𝗈𝗇𝖾'𝗌 𝖲𝗎𝗉𝗋𝖾𝗆𝖺𝖼𝗒 �
 st.caption("Advanced user profile view")
 
 # ===============================
-# HARDCODED COOKIE
+# HARDCODED COOKIE (PRIVATE USE)
 # ===============================
 UAAS_COOKIE = (
     "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2C"
@@ -29,6 +29,7 @@ UAAS_COOKIE = (
     "ZmTQV6vQXnZe6pAGSJePwpMo0v%2FEzV6CN%2Bm4crHWjw091VHKK5f%2BXaxEyfakeEleUZ"
     "yaYza8BlqCABfbOrWmDV7DeWAi2NTpSBR%2F%2BEmv9AwzLE"
 )
+
 # ===============================
 # TIME HELPERS (IST)
 # ===============================
@@ -38,13 +39,13 @@ def ts():
     return str(int(time.time() * 1000))
 
 def ts_to_ist(ts_val):
-    if not ts_val or ts_val == 0:
+    if not ts_val:
         return "-"
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
     return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")
 
 def days_ago(ts_val):
-    if not ts_val or ts_val == 0:
+    if not ts_val:
         return "-"
     now = datetime.now(IST)
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
@@ -54,25 +55,31 @@ def gender(v):
     return {0: "Unknown", 1: "Male", 2: "Female"}.get(v, "Unknown")
 
 # ===============================
-# INPUT (UI UNCHANGED)
+# INPUT
 # ===============================
-with st.form("fetch_form"):
-    vid_or_uid = st.text_input("Enter VID", placeholder="177307453")
-    fetch_btn = st.form_submit_button("🚀 Fetch User Info")
+user_input = st.text_input(
+    "Enter VID or UID",
+    placeholder="177307453 (VID)  |  4466939783 (UID)"
+)
+fetch_btn = st.button("🚀 Fetch User Info")
 
 # ===============================
 # MAIN LOGIC
 # ===============================
 if fetch_btn:
-    if not vid_or_uid.isdigit():
-        st.error("❌ VID / UID must be numeric")
+    if not user_input.isdigit():
+        st.error("❌ Input must be numeric")
     else:
         try:
+            uid = None
+
             # ===============================
-            # UID OR VID DETECTION
+            # DETECT UID OR VID
             # ===============================
-            if vid_or_uid.startswith("4"):
-                uid = int(vid_or_uid)
+            if user_input.startswith("4"):
+                uid = int(user_input)
+                st.success(f"✅ Using direct UID: {uid}")
+
             else:
                 with st.spinner("Resolving VID → UID..."):
                     r1 = requests.post(
@@ -89,12 +96,14 @@ if fetch_btn:
                         cookies={"uaasCookie": UAAS_COOKIE},
                         json={
                             "sequence": int(ts()),
-                            "vid": int(vid_or_uid),
+                            "vid": int(user_input),
                             "t": 1
                         },
                         timeout=20
                     )
+
                     uid = r1.json()["user_info"]["uid"]
+                    st.success(f"✅ VID resolved → UID: {uid}")
 
             # ===============================
             # UID → FULL PROFILE
@@ -129,19 +138,21 @@ if fetch_btn:
                 info = data["infos"][0]
 
             # ===============================
-            # PROFILE HEADER (UNCHANGED)
+            # PROFILE HEADER
             # ===============================
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                st.image(info.get("avatar"), width=180)
+                avatar_url = info.get("avatar")
+                st.image(avatar_url, width=180)
+                reg_ts = info.get("register_time")
                 st.markdown(
-                    f"""
-                    🕒 **Registered:**  
-                    {ts_to_ist(info.get("register_time"))}  
-                    ⏳ *{days_ago(info.get("register_time"))}*
-                    """
+                    f"🕒 **Registered:**  \n"
+                    f"{ts_to_ist(reg_ts)}  \n"
+                    f"⏳ *{days_ago(reg_ts)}*"
                 )
+                if avatar_url:
+                    st.markdown(f"🔗 [Open Avatar Image]({avatar_url})")
 
             with col2:
                 st.markdown(f"## {info.get('nick')}")
@@ -154,21 +165,61 @@ if fetch_btn:
             st.divider()
 
             # ===============================
-            # BASIC INFORMATION
+            # BASIC INFO
             # ===============================
             st.subheader("📌 Basic Information")
             c1, c2, c3 = st.columns(3)
 
-            c1.markdown(f"**🌍 Country:** {info.get('country')}")
-            c2.markdown(f"**📱 Device:** {info.get('device')}")
-            c3.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
+            with c1:
+                st.markdown(f"**🌍 Country:** {info.get('country')}")
+                st.markdown(f"**🏳 Region:** {info.get('region')}")
+                st.markdown(f"**🏠 Hometown:** {info.get('hometown')}")
+
+            with c2:
+                st.markdown(f"**📱 Device:** {info.get('device')}")
+                st.markdown(f"**🧠 OS:** {info.get('os_type')}")
+                st.markdown(f"**📦 App Name:** {info.get('app_name')}")
+
+            with c3:
+                st.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
+                st.markdown(f"**🗣 Language:** {info.get('lang')}")
+                st.markdown(f"**💼 Job:** {info.get('job')}")
 
             # ===============================
-            # VIP
+            # ACTIVITY
+            # ===============================
+            st.subheader("🕒 Registration & Activity (IST)")
+            r1, r2, r3 = st.columns(3)
+
+            with r1:
+                st.markdown("**🟢 Register Time**")
+                st.write(ts_to_ist(info.get("register_time")))
+                st.caption(days_ago(info.get("register_time")))
+
+            with r2:
+                st.markdown("**🟢 First Login**")
+                st.write(ts_to_ist(info.get("first_login_time")))
+                st.caption(days_ago(info.get("first_login_time")))
+
+            with r3:
+                st.markdown("**🔵 Last Login**")
+                st.write(ts_to_ist(info.get("last_login_time")))
+                st.caption(days_ago(info.get("last_login_time")))
+
+            # ===============================
+            # VIP / FLAGS
             # ===============================
             st.subheader("⭐ VIP / Flags")
             hago_ext = info.get("hago_ext", {})
             st.markdown(f"**SVIP Level:** {hago_ext.get('svip_level')}")
+            st.markdown(f"**Forbid Follow:** {hago_ext.get('forbid_follow')}")
+            st.markdown(f"**Forbid Bother:** {hago_ext.get('forbid_bother')}")
+
+            # ===============================
+            # LABELS
+            # ===============================
+            st.subheader("🏷 Labels")
+            st.write(info.get("label_ids", []))
 
             # ===============================
             # RAW JSON
