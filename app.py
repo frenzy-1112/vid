@@ -60,7 +60,7 @@ def gender(v):
 with st.form("fetch_form"):
     user_input = st.text_input(
         "Enter VID or UID",
-        placeholder="177307453 (VID)  |  4466939783 (UID)"
+        placeholder="2077576330 (VID)  |  4466939783 (UID)"
     )
     fetch_btn = st.form_submit_button("🚀 Fetch User Info")
 
