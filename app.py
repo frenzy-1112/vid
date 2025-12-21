@@ -31,7 +31,7 @@ UAAS_COOKIE = (
 )
 
 # ===============================
-# TIME HELPERS (IST)
+# TIME HELPERS (12H IST)
 # ===============================
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -41,9 +41,8 @@ def ts():
 def ts_to_ist(ts_val):
     if not ts_val or ts_val == 0:
         return "-"
-    return datetime.fromtimestamp(int(ts_val), tz=IST).strftime(
-        "%Y-%m-%d %H:%M:%S IST"
-    )
+    dt = datetime.fromtimestamp(int(ts_val), tz=IST)
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")
 
 def days_ago(ts_val):
     if not ts_val or ts_val == 0:
@@ -66,12 +65,10 @@ fetch_btn = st.button("🚀 Fetch User Info")
 # ===============================
 if fetch_btn:
     if not vid.isdigit():
-        st.error("VID must be numeric")
+        st.error("❌ VID must be numeric")
     else:
         try:
-            # ===============================
             # 1️⃣ VID → UID
-            # ===============================
             r1 = requests.post(
                 "https://i-875.olaparty.com/ymicro/api",
                 headers={
@@ -84,19 +81,13 @@ if fetch_btn:
                     "Content-Type": "application/json",
                 },
                 cookies={"uaasCookie": UAAS_COOKIE},
-                json={
-                    "sequence": int(ts()),
-                    "vid": int(vid),
-                    "t": 1
-                },
+                json={"sequence": int(ts()), "vid": int(vid), "t": 1},
                 timeout=20
             )
 
             uid = r1.json()["user_info"]["uid"]
 
-            # ===============================
             # 2️⃣ UID → PROFILE
-            # ===============================
             r2 = requests.post(
                 "https://api.olaparty.com/ymicro/sapi",
                 params={
@@ -125,15 +116,18 @@ if fetch_btn:
             info = r2.json()["infos"][0]
 
             # ===============================
-            # PROFILE HEADER (ENHANCED)
+            # PROFILE HEADER (COPY ENABLED)
             # ===============================
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                st.image(info.get("avatar"), width=200)
+                st.image(info.get("avatar"), width=180)
 
             with col2:
                 st.markdown(f"## {info.get('nick')}")
+                st.code(info.get("nick"), language="text")
+                st.caption("Nick (click to copy)")
+
                 st.code(info.get("uid"), language="text")
                 st.caption("UID (click to copy)")
 
@@ -144,18 +138,18 @@ if fetch_btn:
                 st.markdown(f"**Birthday:** {info.get('birthday')}")
                 st.markdown(f"**Bio:** {info.get('sign')}")
 
-                st.markdown("### 🕒 Registration")
-                st.write(ts_to_ist(info.get("register_time")))
+                st.markdown("### 🕒 Register Time")
+                st.code(ts_to_ist(info.get("register_time")), language="text")
                 st.caption(days_ago(info.get("register_time")))
 
                 st.markdown("### 🖼 Avatar URL")
                 st.code(info.get("avatar"), language="text")
-                st.caption("Tap to copy avatar link")
+                st.caption("Click to copy avatar link")
 
             st.divider()
 
         except Exception as e:
-            st.error(f"Error occurred: {e}")
+            st.error(f"🔥 Error occurred: {e}")
 
 # ===============================
 # FOOTER
