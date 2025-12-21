@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 # STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="VID / UID → User Details Fetcher",
+    page_title="VID → User Details Fetcher",
     layout="wide",
 )
 
@@ -29,7 +29,6 @@ UAAS_COOKIE = (
     "ZmTQV6vQXnZe6pAGSJePwpMo0v%2FEzV6CN%2Bm4crHWjw091VHKK5f%2BXaxEyfakeEleUZ"
     "yaYza8BlqCABfbOrWmDV7DeWAi2NTpSBR%2F%2BEmv9AwzLE"
 )
-
 # ===============================
 # TIME HELPERS (IST)
 # ===============================
@@ -38,45 +37,42 @@ IST = timezone(timedelta(hours=5, minutes=30))
 def ts():
     return str(int(time.time() * 1000))
 
-def ts_to_ist(v):
-    if not v:
+def ts_to_ist(ts_val):
+    if not ts_val or ts_val == 0:
         return "-"
-    return datetime.fromtimestamp(int(v), tz=IST).strftime(
-        "%Y-%m-%d %I:%M:%S %p IST"
-    )
+    dt = datetime.fromtimestamp(int(ts_val), tz=IST)
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")
 
-def days_ago(v):
-    if not v:
+def days_ago(ts_val):
+    if not ts_val or ts_val == 0:
         return "-"
-    return f"{(datetime.now(IST) - datetime.fromtimestamp(int(v), tz=IST)).days} days ago"
+    now = datetime.now(IST)
+    dt = datetime.fromtimestamp(int(ts_val), tz=IST)
+    return f"{(now - dt).days} days ago"
 
 def gender(v):
     return {0: "Unknown", 1: "Male", 2: "Female"}.get(v, "Unknown")
 
 # ===============================
-# FORM INPUT (ENTER WORKS)
+# INPUT (UI UNCHANGED)
 # ===============================
 with st.form("fetch_form"):
-    user_input = st.text_input(
-        "Enter VID or UID",
-        placeholder="177307453 (VID)  |  4466939783 (UID)"
-    )
+    vid_or_uid = st.text_input("Enter VID", placeholder="177307453")
     fetch_btn = st.form_submit_button("🚀 Fetch User Info")
 
 # ===============================
 # MAIN LOGIC
 # ===============================
 if fetch_btn:
-    if not user_input.isdigit():
-        st.error("❌ Input must be numeric")
+    if not vid_or_uid.isdigit():
+        st.error("❌ VID / UID must be numeric")
     else:
         try:
             # ===============================
-            # UID DETECTION
+            # UID OR VID DETECTION
             # ===============================
-            if user_input.startswith("4"):
-                uid = int(user_input)
-                st.success(f"✅ Using direct UID: {uid}")
+            if vid_or_uid.startswith("4"):
+                uid = int(vid_or_uid)
             else:
                 with st.spinner("Resolving VID → UID..."):
                     r1 = requests.post(
@@ -93,16 +89,15 @@ if fetch_btn:
                         cookies={"uaasCookie": UAAS_COOKIE},
                         json={
                             "sequence": int(ts()),
-                            "vid": int(user_input),
+                            "vid": int(vid_or_uid),
                             "t": 1
                         },
                         timeout=20
                     )
                     uid = r1.json()["user_info"]["uid"]
-                    st.success(f"✅ VID resolved → UID: {uid}")
 
             # ===============================
-            # FETCH PROFILE
+            # UID → FULL PROFILE
             # ===============================
             with st.spinner("Fetching full user profile..."):
                 r2 = requests.post(
@@ -134,19 +129,21 @@ if fetch_btn:
                 info = data["infos"][0]
 
             # ===============================
-            # PROFILE HEADER
+            # PROFILE HEADER (UNCHANGED)
             # ===============================
-            c1, c2 = st.columns([1, 3])
+            col1, col2 = st.columns([1, 3])
 
-            with c1:
+            with col1:
                 st.image(info.get("avatar"), width=180)
                 st.markdown(
-                    f"🕒 **Registered:**  \n"
-                    f"{ts_to_ist(info.get('register_time'))}  \n"
-                    f"⏳ *{days_ago(info.get('register_time'))}*"
+                    f"""
+                    🕒 **Registered:**  
+                    {ts_to_ist(info.get("register_time"))}  
+                    ⏳ *{days_ago(info.get("register_time"))}*
+                    """
                 )
 
-            with c2:
+            with col2:
                 st.markdown(f"## {info.get('nick')}")
                 st.markdown(f"**UID:** `{info.get('uid')}`")
                 st.markdown(f"**VID:** `{info.get('vid')}`")
@@ -157,23 +154,30 @@ if fetch_btn:
             st.divider()
 
             # ===============================
-            # EXTRA INFO
+            # BASIC INFORMATION
             # ===============================
             st.subheader("📌 Basic Information")
-            a, b, c = st.columns(3)
-            a.write(f"🌍 Country: {info.get('country')}")
-            b.write(f"📱 Device: {info.get('device')}")
-            c.write(f"🔢 App Version: {info.get('app_ver')}")
+            c1, c2, c3 = st.columns(3)
 
+            c1.markdown(f"**🌍 Country:** {info.get('country')}")
+            c2.markdown(f"**📱 Device:** {info.get('device')}")
+            c3.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
+
+            # ===============================
+            # VIP
+            # ===============================
             st.subheader("⭐ VIP / Flags")
             hago_ext = info.get("hago_ext", {})
-            st.write("SVIP Level:", hago_ext.get("svip_level"))
+            st.markdown(f"**SVIP Level:** {hago_ext.get('svip_level')}")
 
-            with st.expander("🧾 Raw JSON"):
+            # ===============================
+            # RAW JSON
+            # ===============================
+            with st.expander("🧾 Raw JSON Response"):
                 st.json(data)
 
         except Exception as e:
-            st.error(f"🔥 Error: {e}")
+            st.error(f"🔥 Error occurred: {e}")
 
 # ===============================
 # FOOTER
