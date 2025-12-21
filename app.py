@@ -42,7 +42,7 @@ def ts_to_ist(ts_val):
     if not ts_val or ts_val == 0:
         return "-"
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
-    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")  # 12H FORMAT
 
 def days_ago(ts_val):
     if not ts_val or ts_val == 0:
@@ -145,28 +145,7 @@ if fetch_btn:
                 )
 
                 if avatar_url:
-                    st.markdown(
-                        f"""
-                        <div style="margin-top:8px;">
-                            <span
-                                onclick="navigator.clipboard.writeText('{avatar_url}')"
-                                title="Click to copy"
-                                style="
-                                    cursor:pointer;
-                                    color:#4ea1ff;
-                                    text-decoration:underline;
-                                    font-size:14px;
-                                "
-                            >
-                                🔗 Copy Avatar Image URL
-                            </span>
-                            <div style="font-size:12px;color:gray;">
-                                Click once to copy
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    st.markdown(f"🔗 [Open Avatar Image]({avatar_url})")
 
             with col2:
                 st.markdown(f"## {info.get('nick')}")
@@ -198,6 +177,42 @@ if fetch_btn:
                 st.markdown(f"**🔢 App Version:** {info.get('app_ver')}")
                 st.markdown(f"**🗣 Language:** {info.get('lang')}")
                 st.markdown(f"**💼 Job:** {info.get('job')}")
+
+            # ===============================
+            # REGISTRATION & ACTIVITY
+            # ===============================
+            st.subheader("🕒 Registration & Activity (IST)")
+            r1, r2, r3 = st.columns(3)
+
+            with r1:
+                st.markdown("**🟢 Register Time**")
+                st.write(ts_to_ist(info.get("register_time")))
+                st.caption(days_ago(info.get("register_time")))
+
+            with r2:
+                st.markdown("**🟢 First Login**")
+                st.write(ts_to_ist(info.get("first_login_time")))
+                st.caption(days_ago(info.get("first_login_time")))
+
+            with r3:
+                st.markdown("**🔵 Last Login**")
+                st.write(ts_to_ist(info.get("last_login_time")))
+                st.caption(days_ago(info.get("last_login_time")))
+
+            # ===============================
+            # VIP / FLAGS
+            # ===============================
+            st.subheader("⭐ VIP / Flags")
+            hago_ext = info.get("hago_ext", {})
+            st.markdown(f"**SVIP Level:** {hago_ext.get('svip_level')}")
+            st.markdown(f"**Forbid Follow:** {hago_ext.get('forbid_follow')}")
+            st.markdown(f"**Forbid Bother:** {hago_ext.get('forbid_bother')}")
+
+            # ===============================
+            # LABELS
+            # ===============================
+            st.subheader("🏷 Labels")
+            st.write(info.get("label_ids", []))
 
             # ===============================
             # RAW JSON
