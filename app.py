@@ -1,5 +1,5 @@
 import streamlit as st
-import httpx
+import requests
 import json
 import time
 
@@ -7,7 +7,7 @@ import time
 # STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="VID → User Info",
+    page_title="VID → User Details Fetcher",
     layout="wide",
 )
 
@@ -15,7 +15,7 @@ st.title("🔍 VID → User Details Fetcher")
 st.caption("Enter VID and fetch complete user information")
 
 # ===============================
-# HARDCODED COOKIE (NOT SAFE)
+# HARDCODED COOKIE (KEEP REPO PRIVATE)
 # ===============================
 UAAS_COOKIE = "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2CnNM9ovMxw68QzWOyQX236BxhgJK9ffj%2BtHd8YDwrmMCxeHcUP3khT7ZIlfNaJH%2FP555SKvk%2BwkLQR%2BxiNEMh6CqdrdI%2F0YkLLRJALxoBMthSdWByXPACYv1L2RehQk8Gc98I9RIG5h11g87OtUXE4Jymwhxz4Y6RdQEcUpSSuOJq3agxtkoAZ2BZrFdG4SwP6AnYaVtghDNjm8G8g9sGSozagbhZxA%2Fde9IDqORxokDpFmCjcQ%2Fcbzg%2F%2Fb4vHfrrUUAyi83RA7l1%2Brq7LBl9Z2yNrbCpDo2adm0Qk57VVRroC5oEv%2BX8RyddWcupr6QTf0bm9KRuE62pKCkfWC37v9ahvIFOrDcO7EfKH33za5cio4SGTBT6LXU4fpMlvbr48NGLvLPCTDWejlROuPZmTQV6vQXnZe6pAGSJePwpMo0v%2FEzV6CN%2Bm4crHWjw091VHKK5f%2BXaxEyfakeEleUZyaYza8BlqCABfbOrWmDV7DeWAi2NTpSBR%2F%2BEmv9AwzLE"
 
@@ -30,8 +30,7 @@ def ts():
 # ===============================
 vid = st.text_input(
     "Enter VID",
-    placeholder="129271750",
-    help="Numeric VID only"
+    placeholder="177307453",
 )
 
 fetch_btn = st.button("🚀 Fetch User Info")
@@ -44,13 +43,11 @@ if fetch_btn:
         st.error("❌ VID must be numeric")
     else:
         try:
+            # ===============================
+            # 1️⃣ VID → UID
+            # ===============================
             with st.spinner("🔎 Resolving VID → UID..."):
-                cclient = httpx.Client(timeout=20)
-
-                # ===============================
-                # 1️⃣ VID → UID
-                # ===============================
-                r1 = client.post(
+                r1 = requests.post(
                     "https://i-875.olaparty.com/ymicro/api",
                     headers={
                         "X-Ymicro-Api-Method-Name": "InformAgainst.CheckUnsealFriend",
@@ -68,7 +65,8 @@ if fetch_btn:
                         "sequence": int(ts()),
                         "vid": int(vid),
                         "t": 1
-                    }
+                    },
+                    timeout=20
                 )
 
                 resp1 = r1.json()
@@ -85,7 +83,7 @@ if fetch_btn:
             # 2️⃣ UID → USER INFO
             # ===============================
             with st.spinner("📦 Fetching full user details..."):
-                r2 = client.post(
+                r2 = requests.post(
                     "https://api.olaparty.com/ymicro/sapi",
                     params={
                         "method": "Uinfo.GetUinfoByVer",
@@ -103,16 +101,15 @@ if fetch_btn:
                         "uaasCookie": UAAS_COOKIE,
                         "hagouid": str(uid)
                     },
-                    content=json.dumps({
+                    data=json.dumps({
                         "sequence": int(ts()),
                         "uids": [{"uid": uid}]
-                    })
+                    }),
+                    timeout=20
                 )
 
                 raw_text = r2.text
                 parsed_json = json.loads(raw_text)
-
-            client.close()
 
             # ===============================
             # OUTPUT
