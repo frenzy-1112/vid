@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("🔍 VID → User Details Fetcher")
+st.title("𝓜𝓪𝓵𝓸𝓷𝓮'𝓼 𝓢𝓾𝓹𝓻𝓮𝓶𝓪𝓬𝔂 👑")
 st.caption("Advanced user profile view")
 
 # ===============================
@@ -227,4 +227,4 @@ if fetch_btn:
 # FOOTER
 # ===============================
 st.markdown("---")
-st.caption("⚠️ Hardcoded cookie version — keep repository PRIVATE")
+st.caption("𝖢𝗋𝖾𝖺𝗍𝖾𝖽 𝖡𝗒 𝖬𝖺𝗅𝗈𝗇𝖾 𝖯𝗏𝗍 𝖮𝗇𝗅𝗒 🔐")
