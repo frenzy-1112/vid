@@ -55,13 +55,14 @@ def gender(v):
     return {0: "Unknown", 1: "Male", 2: "Female"}.get(v, "Unknown")
 
 # ===============================
-# INPUT
+# INPUT (ENTER KEY WORKS)
 # ===============================
-user_input = st.text_input(
-    "Enter VID or UID",
-    placeholder="177307453 (VID)  |  4466939783 (UID)"
-)
-fetch_btn = st.button("🚀 Fetch User Info")
+with st.form("fetch_form"):
+    user_input = st.text_input(
+        "Enter VID or UID",
+        placeholder="177307453 (VID)  |  4466939783 (UID)"
+    )
+    fetch_btn = st.form_submit_button("🚀 Fetch User Info")
 
 # ===============================
 # MAIN LOGIC
