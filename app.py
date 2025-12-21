@@ -16,7 +16,39 @@ st.title("🔍 VID → User Details Fetcher")
 st.caption("Advanced user profile view")
 
 # ===============================
-# HARDCODED COOKIE (PRIVATE REPO ONLY)
+# CUSTOM CSS (MATCH UI)
+# ===============================
+st.markdown("""
+<style>
+.profile-name {
+    font-size: 34px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.badge {
+    display: inline-block;
+    background-color: #0f5132;
+    color: #7CFFB2;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 14px;
+    margin-left: 8px;
+}
+.label {
+    color: #b5b5b5;
+    font-size: 14px;
+    margin-top: 6px;
+}
+.value {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ===============================
+# HARDCODED COOKIE (PRIVATE REPO)
 # ===============================
 UAAS_COOKIE = (
     "wEri87yq01Zzqgf4qSTpmddlv6%2FUCMU2DrLW1yOup21B6kswFTe4f1T0syyzDejl%2C"
@@ -31,7 +63,7 @@ UAAS_COOKIE = (
 )
 
 # ===============================
-# TIME HELPERS (12H IST)
+# TIME HELPERS (IST – 12H)
 # ===============================
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -65,7 +97,7 @@ fetch_btn = st.button("🚀 Fetch User Info")
 # ===============================
 if fetch_btn:
     if not vid.isdigit():
-        st.error("❌ VID must be numeric")
+        st.error("VID must be numeric")
     else:
         try:
             # 1️⃣ VID → UID
@@ -116,40 +148,50 @@ if fetch_btn:
             info = r2.json()["infos"][0]
 
             # ===============================
-            # PROFILE HEADER (COPY ENABLED)
+            # PROFILE HEADER (MATCH IMAGE)
             # ===============================
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                st.image(info.get("avatar"), width=180)
+                st.image(info.get("avatar"), width=220)
 
             with col2:
-                st.markdown(f"## {info.get('nick')}")
-                st.code(info.get("nick"), language="text")
-                st.caption("Nick (click to copy)")
+                st.markdown(
+                    f"<div class='profile-name'>{info.get('nick')} 🖤</div>",
+                    unsafe_allow_html=True
+                )
 
-                st.code(info.get("uid"), language="text")
-                st.caption("UID (click to copy)")
+                st.markdown(
+                    f"<div class='label'>UID:"
+                    f"<span class='badge'>{info.get('uid')}</span></div>",
+                    unsafe_allow_html=True
+                )
 
-                st.code(info.get("vid"), language="text")
-                st.caption("VID (click to copy)")
+                st.markdown(
+                    f"<div class='label'>VID:"
+                    f"<span class='badge'>{info.get('vid')}</span></div>",
+                    unsafe_allow_html=True
+                )
 
-                st.markdown(f"**Gender:** {gender(info.get('sex'))}")
-                st.markdown(f"**Birthday:** {info.get('birthday')}")
-                st.markdown(f"**Bio:** {info.get('sign')}")
+                st.markdown("<br>", unsafe_allow_html=True)
 
-                st.markdown("### 🕒 Register Time")
-                st.code(ts_to_ist(info.get("register_time")), language="text")
-                st.caption(days_ago(info.get("register_time")))
-
-                st.markdown("### 🖼 Avatar URL")
-                st.code(info.get("avatar"), language="text")
-                st.caption("Click to copy avatar link")
+                st.markdown(
+                    f"<div class='value'><b>Gender:</b> {gender(info.get('sex'))}</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f"<div class='value'><b>Birthday:</b> {info.get('birthday')}</div>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f"<div class='value'><b>Bio:</b> {info.get('sign')}</div>",
+                    unsafe_allow_html=True
+                )
 
             st.divider()
 
         except Exception as e:
-            st.error(f"🔥 Error occurred: {e}")
+            st.error(f"Error occurred: {e}")
 
 # ===============================
 # FOOTER
