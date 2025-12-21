@@ -42,7 +42,7 @@ def ts_to_ist(ts_val):
     if not ts_val or ts_val == 0:
         return "-"
     dt = datetime.fromtimestamp(int(ts_val), tz=IST)
-    return dt.strftime("%Y-%m-%d %H:%M:%S IST")
+    return dt.strftime("%Y-%m-%d %I:%M:%S %p IST")  # 12H FORMAT
 
 def days_ago(ts_val):
     if not ts_val or ts_val == 0:
@@ -132,7 +132,20 @@ if fetch_btn:
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                st.image(info.get("avatar"), width=180)
+                avatar_url = info.get("avatar")
+                st.image(avatar_url, width=180)
+
+                reg_ts = info.get("register_time")
+                st.markdown(
+                    f"""
+                    🕒 **Registered:**  
+                    {ts_to_ist(reg_ts)}  
+                    ⏳ *{days_ago(reg_ts)}*
+                    """
+                )
+
+                if avatar_url:
+                    st.markdown(f"🔗 [Open Avatar Image]({avatar_url})")
 
             with col2:
                 st.markdown(f"## {info.get('nick')}")
@@ -166,7 +179,7 @@ if fetch_btn:
                 st.markdown(f"**💼 Job:** {info.get('job')}")
 
             # ===============================
-            # REGISTRATION & ACTIVITY (IST)
+            # REGISTRATION & ACTIVITY
             # ===============================
             st.subheader("🕒 Registration & Activity (IST)")
             r1, r2, r3 = st.columns(3)
